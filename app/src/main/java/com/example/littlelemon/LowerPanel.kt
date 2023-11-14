@@ -1,8 +1,8 @@
 package com.example.littlelemon
 
 import android.util.Log
+import android.util.LogPrinter
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,24 +15,31 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.example.littlelemon.DishRepository
 import com.example.littlelemon.ui.theme.LittleLemonColor
+import kotlinx.coroutines.selects.select
 
 @Composable
 fun LowerPanel(navController: NavHostController) {
+    var dishes by remember { mutableStateOf(DishRepository.dishes) }
+    var selected by remember{ mutableStateOf("All") }
     Column {
-        WeeklySpecial()
-        Menu(navController)
+        WeeklySpecial(dishes=dishes,selected){it1,it2->
+            dishes=it1
+            selected=it2
+            println(dishes)
+        }
+        Menu(navController,dishes)
     }
 }
 
 
+
+
 @Composable
-fun WeeklySpecial(){
+fun WeeklySpecial(dishes: List<Dish>,selected: String, onFilterClicked: (List<Dish>,Selected:String) -> Unit){
     Card(Modifier.fillMaxWidth()) {
         Column() {
             Text(text = "Weekly Special",
@@ -41,8 +48,10 @@ fun WeeklySpecial(){
                 modifier = Modifier.padding(8.dp)
             )
             Row() {
-                category.forEach{
-                    MenuCategory(category = it)
+                category.forEach{ y ->
+                    MenuCategory(y, dishes,selected){it1,it2->
+                          onFilterClicked(it1,it2)
+                    }
                 }
             }
         }
@@ -51,26 +60,37 @@ fun WeeklySpecial(){
 
 
 @Composable
-fun MenuCategory(category: String){
-    Button(onClick = { /*TODO*/ }, colors = ButtonDefaults.buttonColors(Color.LightGray), shape = RoundedCornerShape(40),
-        modifier = Modifier.padding(5.dp)) {
-        Text(text = category)
+fun MenuCategory(category: String,dishes: List<Dish>,selected: String, onFilterClicked: (List<Dish>,selected:String) -> Unit){
+    Button(onClick = { val d=DishRepository.dishes.filter {
+        dish -> dish.category==category || category=="All"
+    }
+        onFilterClicked(d,category)}, colors = ButtonDefaults.buttonColors(
+        if(selected==category){
+            Color.Black
+        }
+        else{
+        Color.Gray}), shape = RoundedCornerShape(40),
+        modifier = Modifier.padding(3.dp)) {
+        Text(text = category, color = Color.White)
     }
 }
+
 val category= listOf<String>(
+    "All",
     "Lunch",
     "Dessert",
     "Main Course"
 )
 
 @Composable
-fun Menu(navController: NavHostController) {
+fun Menu(navController: NavHostController, dishes: List<Dish>) {
     LazyColumn {
-        items(DishRepository.dishes) { Dish ->
+        items(dishes) { Dish ->
             MenuDish(Dish, navController)
         }
     }
 }
+
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun MenuDish(Dish: Dish, navController: NavHostController? = null) {
