@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -28,9 +29,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+var t=0.0
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun C() {
+fun C():Double {
     val context = LocalContext.current
     val databaseRef = FirebaseDatabase.getInstance("https://food-delivery-app-355a6-default-rtdb.asia-southeast1.firebasedatabase.app").getReference("dishes")
 
@@ -64,12 +66,12 @@ fun C() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = "Cart Total",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = LittleLemonColor.yellow
-        )
+            Text(
+                text = "Cart Total",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = LittleLemonColor.yellow
+            )
         Column(
             modifier = Modifier
                 .padding(start = 10.dp, end = 10.dp)
@@ -77,6 +79,7 @@ fun C() {
                 .verticalScroll(rememberScrollState())
         ) {
             users?.forEach { user ->
+                t+=user.price
                 val dish = requireNotNull(DishRepository.getDish(user.id))
                 Card() {
                     Row(
@@ -128,28 +131,26 @@ fun C() {
                 }
             }
         }
-        Button(onClick = {
-            Toast.makeText(context, "Order Succesfull!", Toast.LENGTH_SHORT).show()
-        }, colors = ButtonDefaults.buttonColors(Color.Black), shape = RoundedCornerShape(20.dp)) {
-            Text(text = "Order Now", color = Color.White, fontSize = 18.sp)
-}}}
+
+}
+return t}
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun Cart(){
+fun Cart(total:Double,onFilterClicked: (total:Double) -> Unit) {
     val scaffoldState1 = rememberBottomSheetScaffoldState()
     val scope1 = rememberCoroutineScope()
     var showBottomSheet by remember { mutableStateOf(false) }
     BottomSheetScaffold(
         scaffoldState = scaffoldState1,
         sheetBackgroundColor = Color.Black,
-        sheetPeekHeight = 128.dp,
-        sheetShape = RoundedCornerShape(20.dp,20.dp,0.dp,0.dp),
+        sheetPeekHeight = 150.dp,
+        sheetShape = RoundedCornerShape(20.dp, 20.dp, 0.dp, 0.dp),
         drawerGesturesEnabled = true,
         sheetContent = {
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(300.dp),
+                    .height(145.dp),
                 contentAlignment = Alignment.TopCenter
             ) {
 
@@ -162,11 +163,13 @@ fun Cart(){
                             .clickable {
                                 scope1.launch {
                                     if (scaffoldState1.bottomSheetState.isCollapsed)
-                                        scaffoldState1.bottomSheetState.animateTo(BottomSheetValue.Expanded,
+                                        scaffoldState1.bottomSheetState.animateTo(
+                                            BottomSheetValue.Expanded,
                                             tween(1500)
                                         )
                                     else
-                                        scaffoldState1.bottomSheetState.animateTo(BottomSheetValue.Collapsed,
+                                        scaffoldState1.bottomSheetState.animateTo(
+                                            BottomSheetValue.Collapsed,
                                             tween(1500)
                                         )
                                 }
@@ -174,24 +177,118 @@ fun Cart(){
                             .fillMaxWidth()
 
                     )
-                Text(text = "Grand Total :", color = Color.Cyan, modifier = Modifier.padding(10.dp), fontSize = 30.sp)
-                Text(text = "0.5")}
-            }
-            Column(
-                Modifier
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.Start
-            ) {
-                Text("Sheet content", color = Color.Cyan)
-            }
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                    ) {
+                        if(total!=0.0){
+                        Row(Modifier.fillMaxWidth(0.52f)) {
+                            Text(
+                                text = "Grand Total",
+                                color = Color.Cyan,
+                                modifier = Modifier.padding(
+                                    start = 20.dp,
+                                    top = 20.dp,
+                                    bottom = 20.dp
+                                ),
+                                fontSize = 35.sp
+                            )
+                        }
+                        Text(
+                            text = ":",
+                            color = Color.Cyan,
+                            modifier = Modifier.padding(start = 0.dp, top = 20.dp, bottom = 20.dp),
+                            fontSize = 35.sp
+                        )
+                        Text(
+                            text = String.format("%.2f",total + (18 / 100.0) * total),
+                            color = Color.Cyan,
+                            modifier = Modifier.padding(start = 10.dp, top = 20.dp, bottom = 20.dp),
+                            fontSize = 35.sp
+                        )
+                    }
+                        else{
+                            Text(
+                                text = "Empty Cart",
+                                color = Color.Cyan,
+                                modifier = Modifier.padding(
+                                    start = 20.dp,
+                                    top = 20.dp,
+                                    bottom = 20.dp
+                                ),fontSize = 35.sp)
+                        }
+                }
+            }}
+            if(total!=0.0){
+            Row {
+                Column(
+                    Modifier.fillMaxWidth(0.52f),
+                    horizontalAlignment = Alignment.Start,
+                ) {
+                    Text(
+                        "Sub Total",
+                        color = Color.Cyan,
+                        modifier = Modifier.padding(start = 20.dp, bottom = 2.dp),
+                        fontSize = 17.sp
+                    )
+                    Text(
+                        "Discount",
+                        color = Color.Cyan,
+                        modifier = Modifier.padding(start = 20.dp, bottom = 2.dp),
+                        fontSize = 17.sp
+                    )
+                    Text(
+                        "Tax and Charges",
+                        color = Color.Cyan,
+                        modifier = Modifier.padding(start = 20.dp, bottom = 10.dp),
+                        fontSize = 17.sp
+                    )
+                }
+                Column {
+                    Text(text = ":", color = Color.Cyan, fontSize = 17.sp)
+                    Text(text = ":", color = Color.Cyan, fontSize = 17.sp)
+                    Text(text = ":", color = Color.Cyan, fontSize = 17.sp)
+                }
+                Column {
+                    Text(
+                        text = total.toFloat().toString(),
+                        color = Color.Cyan,
+                        modifier = Modifier.padding(bottom = 2.dp, start = 18.dp),
+                        fontSize = 17.sp
+                    )
+                    Text(
+                        text = "0.0",
+                        color = Color.Cyan,
+                        modifier = Modifier.padding(bottom = 2.dp, start = 18.dp),
+                        fontSize = 17.sp
+                    )
+                    Text(
+                        text =  String.format("%.2f", (18 / 100.0) * total),
+                        color = Color.Cyan,
+                        modifier = Modifier.padding(bottom = 10.dp, start = 18.dp),
+                        fontSize = 17.sp
+                    )
+                }
+
+            }}
+
         }) { innerPadding ->
         Box(
             Modifier
                 .padding(innerPadding)
-                .fillMaxWidth().clickable { scope1.launch{scaffoldState1.bottomSheetState.animateTo(BottomSheetValue.Collapsed,
-                    tween(1500)
-                ) }}) {
+                .fillMaxWidth()
+                .fillMaxHeight()
+                .clickable {
+                    scope1.launch {
+                        scaffoldState1.bottomSheetState.animateTo(
+                            BottomSheetValue.Collapsed,
+                            tween(1500)
+                        )
+                    }
+                },contentAlignment = Alignment.TopCenter) {
             C()
+            onFilterClicked(t)
+            t = 0.0
         }
     }
 }

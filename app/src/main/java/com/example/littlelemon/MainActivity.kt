@@ -290,7 +290,12 @@ fun App() {
                     DishDetails(id, navcontroller)
                 }
                 composable(Cart.route){
-                    Cart()
+                    var total by remember {
+                        mutableStateOf(0.0)
+                    }
+                    Cart(total){c->
+                        total=c
+                    }
                 }
                 composable(Login.route){
                     dest="Login"
